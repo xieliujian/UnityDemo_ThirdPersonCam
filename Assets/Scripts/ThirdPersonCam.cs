@@ -8,10 +8,6 @@ public class ThirdPersonCam : MonoBehaviour
 {
     #region 常量
 
-#if USEINPUTSYSTEM
-    public const string INPUT_MOUSE_X = "Mouse X";
-    public const string INPUT_MOUSE_Y = "Mouse Y";
-#endif
     public const string INPUT_MOUSE_SCROLLWHEEL = "Mouse ScrollWheel";
     public const string ERROR_UN_BINDCAM = "ThirdPersonCam脚本没有绑定摄像机!";
     public const string ERROR_UN_PLAYER = "ThirdPersonCam脚本没有指定玩家";
@@ -114,15 +110,8 @@ public class ThirdPersonCam : MonoBehaviour
     // Use this for initialization
 	void Start ()
     {
-#if USEINPUTSYSTEM
-        InputManager.touchesBegin += TouchesBegin;
-        InputManager.touchesMove += TouchesMoved;
-        InputManager.touchesStationary += TouchesStationary;
-        InputManager.touchesEnd += TouchesEnd;
-#else
         mJoystickCamUI.OnDrag += OnJoystickCamDrag;
         mJoystickCamUI.OnPinch += OnJoystickCamPinch;
-#endif
     }
 	
 	// Update is called once per frame
@@ -132,15 +121,8 @@ public class ThirdPersonCam : MonoBehaviour
 
     void OnDestroy()
     {
-#if USEINPUTSYSTEM
-        InputManager.touchesBegin -= TouchesBegin;
-        InputManager.touchesMove -= TouchesMoved;
-        InputManager.touchesStationary -= TouchesStationary;
-        InputManager.touchesEnd -= TouchesEnd;
-#else
         mJoystickCamUI.OnDrag -= OnJoystickCamDrag;
         mJoystickCamUI.OnPinch -= OnJoystickCamPinch;
-#endif
     }
 
     void LateUpdate()
@@ -157,24 +139,6 @@ public class ThirdPersonCam : MonoBehaviour
             return;
         }
 
-#if USEINPUTSYSTEM
-
-#if UNITY_EDITOR
-        if (Input.GetMouseButton(1))
-        {
-            mAngleH += Mathf.Clamp(Input.GetAxis(INPUT_MOUSE_X), -1.0f, 1.0f) * mHorizontalAimingSpeed * Time.deltaTime;
-            mAngleV += Mathf.Clamp(Input.GetAxis(INPUT_MOUSE_Y), -1.0f, 1.0f) * mVerticalAimingSpeed * Time.deltaTime;
-        }
-#endif
-
-#if UNITY_ANDROID || UNITY_IOS
-        mAngleH += Mathf.Clamp(mTouchMove.x / Screen.width, -1.0f, 1.0f) * mHorizontalAimingSpeed * 2.0f;
-        mAngleV += Mathf.Clamp(mTouchMove.y / Screen.height, -1.0f, 1.0f) * mVerticalAimingSpeed * 2.0f;
-#endif
-
-        mDistance -= Input.GetAxis(INPUT_MOUSE_SCROLLWHEEL) * mZoomSpeed;
-#endif
-
         mAngleV = Mathf.Clamp(mAngleV, mMinVerticalAngle, mMaxVerticalAngle);
 
         Quaternion animRotation = Quaternion.Euler(-mAngleV, mAngleH, 0.0f);
@@ -189,85 +153,6 @@ public class ThirdPersonCam : MonoBehaviour
 
     #region 回调函数
 
-#if USEINPUTSYSTEM
-    private int mJoystickIndex = -1;
-
-    private int mMoveIndex = -1;
-
-    private void TouchesBegin(Touch[] touches)
-    {
-        for (int i = 0; i < touches.Length; i++)
-        {
-            Touch touch = touches[i];
-
-            if (mJoystickIndex == -1)
-            {
-                if (IsTouchOnJoystick(touch.position))
-                {
-                    mJoystickIndex = i;
-                }
-            }
-
-            if (mJoystickIndex == -1 && touches.Length == 1)
-            {
-                mMoveIndex = i;
-                mTouchMove = Vector2.zero;
-                mTouchLastPos = touch.position;
-            }
-            else if ((mJoystickIndex != -1) && (i != mJoystickIndex) && (i < 2))
-            {
-                mMoveIndex = i;
-                mTouchMove = Vector2.zero;
-                mTouchLastPos = touch.position;
-            }
-        }
-    }
-
-    private void TouchesMoved(Touch[] touches)
-    {
-        for (int i = 0; i < touches.Length; i++)
-        {
-            Touch touch = touches[i];
-
-            if (i == mMoveIndex)
-            {
-                mTouchMove = touch.position - mTouchLastPos;
-                mTouchLastPos = touch.position;
-            }
-        }
-    }
-
-    private void TouchesStationary(Touch[] touches)
-    {
-        for (int i = 0; i < touches.Length; i++)
-        {
-            Touch touch = touches[i];
-
-            if (i == mMoveIndex)
-            {
-                mTouchMove = Vector2.zero;
-            }
-        }
-    }
-
-    private void TouchesEnd(Touch[] touches)
-    {
-        for (int i = 0; i < touches.Length; i++)
-        {
-            Touch touch = touches[i];
-
-            if (i == mJoystickIndex)
-            {
-                mJoystickIndex = -1;
-            }
-            else if (i == mMoveIndex)
-            {
-                mMoveIndex = -1;
-                mTouchMove = Vector2.zero;
-            }
-        }
-    }
-#else
     private void OnJoystickCamDrag(Vector2 delta)
     {
         mAngleH += Mathf.Clamp(delta.x / Screen.width, -1.0f, 1.0f) * mHorizontalAimingSpeed;
@@ -278,22 +163,12 @@ public class ThirdPersonCam : MonoBehaviour
     {
         mDistance += delta * mZoomSpeed;
     }
-#endif
 
     #endregion
 
     #region 函数
 
-#if USEINPUTSYSTEM
-    private bool IsTouchOnJoystick(Vector2 touchpos)
-    {
-        if (EventSystem.current.IsPointerOverGameObject())
-            return true;
 
-        Rect rect = new Rect(0, 0, Screen.width / 3.0f, Screen.height / 2.0f);
-        return rect.Contains(touchpos);
-    }
-#endif
 
     #endregion
 }
